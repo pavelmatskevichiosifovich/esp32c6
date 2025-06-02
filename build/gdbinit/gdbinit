@@ -1,0 +1,2 @@
+source /home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/gdbinit/symbols
+source /home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/gdbinit/connect
