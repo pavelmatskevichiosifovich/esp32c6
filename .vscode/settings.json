@@ -1,3 +1,12 @@
 {
-    "idf.pythonInstallPath": "/usr/bin/python"
+    "idf.pythonInstallPath": "/usr/bin/python3",
+    "idf.espIdfPath": "/home/pavelmatskevichiosifovich/esp/v5.4.1/esp-idf",
+    "idf.toolsPath": "/home/pavelmatskevichiosifovich/.espressif",
+    "idf.openOcdConfigs": [
+        "board/esp32c6-builtin.cfg"
+    ],
+    "idf.customExtraVars": {
+        "IDF_TARGET": "esp32c6"
+    },
+    "idf.port": "/dev/ttyACM0"
 }

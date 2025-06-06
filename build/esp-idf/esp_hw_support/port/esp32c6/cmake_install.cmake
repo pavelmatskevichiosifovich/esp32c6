@@ -1,4 +1,4 @@
-# Install script for directory: /home/pavelmatskevichiosifovich/esp/v5.4.1/esp-idf/components/xtensa
+# Install script for directory: /home/pavelmatskevichiosifovich/esp/v5.4.1/esp-idf/components/esp_hw_support/port/esp32c6
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -34,6 +34,6 @@ endif()
 
 # Set default install directory permissions.
 if(NOT DEFINED CMAKE_OBJDUMP)
-  set(CMAKE_OBJDUMP "/home/pavelmatskevichiosifovich/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32-elf-objdump")
+  set(CMAKE_OBJDUMP "/home/pavelmatskevichiosifovich/.espressif/tools/riscv32-esp-elf/esp-14.2.0_20241119/riscv32-esp-elf/bin/riscv32-esp-elf-objdump")
 endif()
 

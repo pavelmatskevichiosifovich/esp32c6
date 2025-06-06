@@ -1,9 +1,9 @@
-set(CMAKE_HOST_SYSTEM "Linux-6.1.0-34-amd64")
+set(CMAKE_HOST_SYSTEM "Linux-6.1.0-37-amd64")
 set(CMAKE_HOST_SYSTEM_NAME "Linux")
-set(CMAKE_HOST_SYSTEM_VERSION "6.1.0-34-amd64")
+set(CMAKE_HOST_SYSTEM_VERSION "6.1.0-37-amd64")
 set(CMAKE_HOST_SYSTEM_PROCESSOR "x86_64")
 
-include("/home/pavelmatskevichiosifovich/esp/v5.4.1/esp-idf/tools/cmake/toolchain-esp32.cmake")
+include("/home/pavelmatskevichiosifovich/esp/v5.4.1/esp-idf/tools/cmake/toolchain-esp32c6.cmake")
 
 set(CMAKE_SYSTEM "Generic")
 set(CMAKE_SYSTEM_NAME "Generic")

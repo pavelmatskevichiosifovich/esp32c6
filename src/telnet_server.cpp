@@ -13,8 +13,8 @@
 
 namespace telnet_server {
     static const char* TAG = "telnet_server";
-    const std::string ROOT_USER = "root";
-    const std::string ROOT_PASS = "admin";
+    const std::string ROOT_USER = "root";  // Целевой логин
+    const std::string ROOT_PASS = "admin"; // Целевой пароль
     const int PORT = 23;
     const int AUTH_TIMEOUT_SEC = 60;
 
@@ -26,15 +26,12 @@ namespace telnet_server {
     static std::string cleanString(const std::string& input) {
         std::string cleaned;
         for (char c : input) {
-            if (std::isalnum(c) || c == ' ') {
-                if (std::isalpha(c)) {
-                    cleaned += std::tolower(c);
-                } else {
-                    cleaned += c;
-                }
+            if (std::isalnum(c) || c == '_') {  // Только буквы, цифры и подчёркивания, без пробелов
+                cleaned += c;
             }
         }
-        return utils::trim(cleaned);  // Исправлено: utils::trim
+        ESP_LOGI(TAG, "Cleaned string: '%s', length: %zu", cleaned.c_str(), cleaned.length());
+        return cleaned;
     }
 
     static std::string receiveLine(int sock) {
@@ -52,7 +49,9 @@ namespace telnet_server {
                     buffer[len] = '\0';
                     for (int i = 0; i < len; i++) {
                         if (buffer[i] == '\n') {
-                            return line;
+                            ESP_LOGI(TAG, "Received line (raw): '%s', length: %zu", line.c_str(), line.length());
+                            std::string cleaned = cleanString(line);
+                            return cleaned;
                         } else if (buffer[i] != '\r') {
                             line += buffer[i];
                         }
@@ -68,46 +67,42 @@ namespace telnet_server {
         }
     }
 
-    static void handleClient(void *pvParameters) {
-        ClientData *clientData = (ClientData*)pvParameters;
+    static void handleClient(void* pvParameters) {
+        ClientData* clientData = (ClientData*)pvParameters;
         int client_sock = clientData->sock;
         char client_ip[16];
         strcpy(client_ip, clientData->ip);
         vPortFree(pvParameters);
         bool authenticated = false;
-        
+
         send(client_sock, "Login: ", 7, 0);
         std::string username = receiveLine(client_sock);
-        std::string cleaned_username = cleanString(username);
-        ESP_LOGI(TAG, "Cleaned username: '%s'", cleaned_username.c_str());
         send(client_sock, "Password: ", 10, 0);
         std::string password = receiveLine(client_sock);
-        std::string cleaned_password = cleanString(password);
-        ESP_LOGI(TAG, "Cleaned password: '%s'", cleaned_password.c_str());
-        
-        if (cleaned_username == ROOT_USER && cleaned_password == ROOT_PASS) {
+
+        if (username == ROOT_USER && password == ROOT_PASS) {
             authenticated = true;
             send(client_sock, "Authenticated.\n> ", 16, 0);
+            ESP_LOGI(TAG, "Authentication successful for IP: %s", client_ip);
         } else {
             send(client_sock, "Authentication failed.\n", 25, 0);
             close(client_sock);
-            ESP_LOGI(TAG, "Client disconnected from IP: %s (auth failed)", client_ip);
+            ESP_LOGI(TAG, "Client disconnected from IP: %s (auth failed, username: '%s', password: '%s')", client_ip, username.c_str(), password.c_str());
             vTaskDelete(NULL);
             return;
         }
-        
+
         if (authenticated) {
             while (1) {
                 std::string commandStr = receiveLine(client_sock);
                 if (!commandStr.empty()) {
-                    std::string cleaned_command = cleanString(commandStr);
-                    std::string response = processCommand(cleaned_command.c_str());
+                    std::string response = console::processCommand(commandStr.c_str());
                     send(client_sock, response.c_str(), response.length(), 0);
-                    if (response != "Exiting...\n") {
-                        send(client_sock, "\n> ", 3, 0);
-                    }
                     if (response == "Exiting...\n") {
+                        close(client_sock);
                         break;
+                    } else {
+                        send(client_sock, "\n> ", 3, 0);
                     }
                 } else {
                     send(client_sock, "> ", 2, 0);
@@ -119,7 +114,7 @@ namespace telnet_server {
         vTaskDelete(NULL);
     }
 
-    static void telnetServerTask(void *pvParameters) {
+    static void telnetServerTask(void* pvParameters) {
         int port = PORT;
         while (1) {
             int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
@@ -154,7 +149,7 @@ namespace telnet_server {
                     char client_ip[16];
                     inet_ntoa_r(client_addr.sin_addr, client_ip, sizeof(client_ip));
                     ESP_LOGI(TAG, "Client connected from IP: %s", client_ip);
-                    ClientData *clientData = (ClientData*)pvPortMalloc(sizeof(ClientData));
+                    ClientData* clientData = (ClientData*)pvPortMalloc(sizeof(ClientData));
                     clientData->sock = client_sock;
                     strcpy(clientData->ip, client_ip);
                     xTaskCreate(handleClient, "handle_client_task", 4096, clientData, 5, NULL);
@@ -169,11 +164,8 @@ namespace telnet_server {
         vTaskDelete(NULL);
     }
 
-    std::string processCommand(const char* command) {
-        return console::processCommand(command);
-    }
-
     void init() {
+        ESP_LOGI(TAG, "Initializing Telnet server...");
         xTaskCreate(telnetServerTask, "telnet_server_task", 4096, NULL, 5, NULL);
     }
 }

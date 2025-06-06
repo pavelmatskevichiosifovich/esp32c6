@@ -6,14 +6,14 @@
 #include "esp_log.h"
 #include <inttypes.h>
 
-#define ENA_GPIO 6
-#define IN1_GPIO 7
-#define IN2_GPIO 8
+#define ENA_GPIO 8
+#define IN1_GPIO 0
+#define IN2_GPIO 1
 #define LEDC_TIMER LEDC_TIMER_0
 #define LEDC_CHANNEL LEDC_CHANNEL_0
-#define LEDC_FREQ 10  // PWM frequency, Hz
+#define LEDC_FREQ 20  // PWM frequency, Hz
 #define LEDC_RESOLUTION LEDC_TIMER_13_BIT  // PWM resolution
-#define FIXED_DUTY 7191
+#define FIXED_DUTY 5191
 
 namespace l298n {
     static const char* TAG = "l298n";
@@ -68,10 +68,10 @@ namespace l298n {
 
     static void runCycleTask(void *pvParameters) {
         while (1) {
-            forward();
-            vTaskDelay(60 / portTICK_PERIOD_MS);
-            stop();
-            vTaskDelay(10 / portTICK_PERIOD_MS);
+           forward();
+           vTaskDelay(5000 / portTICK_PERIOD_MS);
+           // backward();
+           vTaskDelay(5000 / portTICK_PERIOD_MS);
         }
     }
 

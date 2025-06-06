@@ -7,20 +7,16 @@
 namespace f660 {
     static const char* TAG = "f660";
     static volatile bool stopFlag = false;
-    static bool errorLogged = false;  // Флаг для спама, используем только для ключевых логов
 
     static void telnetClientTask(void *pvParameters) {
         const char* server_ip = "192.168.100.1";
         const int port = 23;
         const int connect_timeout_sec = 5;
-        ESP_LOGI(TAG, "f660: Starting cycle for IP %s", server_ip);  // Только ключевые логи
+        ESP_LOGI(TAG, "f660: Starting cycle for IP %s", server_ip);
         while (!stopFlag) {
             int sock = socket(AF_INET, SOCK_STREAM, 0);
             if (sock < 0) {
-                if (!errorLogged) {
-                    ESP_LOGE(TAG, "Socket failed for IP %s", server_ip);
-                    errorLogged = true;
-                }
+                ESP_LOGE(TAG, "Socket failed for IP %s", server_ip);
                 vTaskDelay(5000 / portTICK_PERIOD_MS);
                 continue;
             }
@@ -34,7 +30,6 @@ namespace f660 {
             server_addr.sin_port = htons(port);
             inet_pton(AF_INET, server_ip, &server_addr.sin_addr);
             if (connect(sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) == 0) {
-                errorLogged = false;
                 ESP_LOGI(TAG, "Connected to IP %s", server_ip);
                 vTaskDelay(1000 / portTICK_PERIOD_MS);
                 send(sock, "root\r", strlen("root\r"), 0);
@@ -50,10 +45,7 @@ namespace f660 {
                 ESP_LOGI(TAG, "Disconnected IP: %s", server_ip);
                 close(sock);
             } else {
-                if (!errorLogged) {
-                    ESP_LOGE(TAG, "Connection failed for IP %s", server_ip);
-                    errorLogged = true;
-                }
+                ESP_LOGE(TAG, "Connection failed for IP %s", server_ip);
                 close(sock);
             }
             vTaskDelay(1000 / portTICK_PERIOD_MS);

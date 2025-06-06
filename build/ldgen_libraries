@@ -1,4 +1,4 @@
-/home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/xtensa/libxtensa.a
+/home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/riscv/libriscv.a
 /home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/esp_driver_gpio/libesp_driver_gpio.a
 /home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/esp_pm/libesp_pm.a
 /home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/mbedtls/libmbedtls.a
@@ -35,14 +35,15 @@
 /home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/esp_driver_mcpwm/libesp_driver_mcpwm.a
 /home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/esp_driver_i2s/libesp_driver_i2s.a
 /home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/sdmmc/libsdmmc.a
-/home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/esp_driver_sdmmc/libesp_driver_sdmmc.a
 /home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/esp_driver_sdspi/libesp_driver_sdspi.a
 /home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/esp_driver_sdio/libesp_driver_sdio.a
-/home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/esp_driver_dac/libesp_driver_dac.a
 /home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/esp_driver_rmt/libesp_driver_rmt.a
+/home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/esp_driver_tsens/libesp_driver_tsens.a
 /home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/esp_driver_sdm/libesp_driver_sdm.a
 /home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/esp_driver_i2c/libesp_driver_i2c.a
 /home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/esp_driver_ledc/libesp_driver_ledc.a
+/home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/esp_driver_parlio/libesp_driver_parlio.a
+/home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/esp_driver_usb_serial_jtag/libesp_driver_usb_serial_jtag.a
 /home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/driver/libdriver.a
 /home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/esp_phy/libesp_phy.a
 /home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/esp_vfs_console/libesp_vfs_console.a
@@ -74,10 +75,10 @@
 /home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/espcoredump/libespcoredump.a
 /home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/wear_levelling/libwear_levelling.a
 /home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/fatfs/libfatfs.a
+/home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/ieee802154/libieee802154.a
 /home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/json/libjson.a
 /home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/mqtt/libmqtt.a
 /home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/nvs_sec_provider/libnvs_sec_provider.a
-/home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/perfmon/libperfmon.a
 /home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/rt/librt.a
 /home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/spiffs/libspiffs.a
 /home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build/esp-idf/wifi_provisioning/libwifi_provisioning.a
