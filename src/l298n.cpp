@@ -6,16 +6,15 @@
 #include "esp_log.h"
 #include <inttypes.h>
 
-#define ENA_GPIO 8
-#define IN1_GPIO 0
-#define IN2_GPIO 1
-#define LEDC_TIMER LEDC_TIMER_0
-#define LEDC_CHANNEL LEDC_CHANNEL_0
-#define LEDC_FREQ 20  // PWM frequency, Hz
-#define LEDC_RESOLUTION LEDC_TIMER_13_BIT  // PWM resolution
-#define FIXED_DUTY 5191
-
 namespace l298n {
+    #define ENA_GPIO 8
+    #define IN1_GPIO 0
+    #define IN2_GPIO 1
+    #define LEDC_TIMER LEDC_TIMER_0
+    #define LEDC_CHANNEL LEDC_CHANNEL_0
+    #define LEDC_FREQ 20  // PWM frequency, Hz
+    #define LEDC_RESOLUTION LEDC_TIMER_13_BIT  // PWM resolution
+    #define FIXED_DUTY 5191
     static const char* TAG = "l298n";
 
     void init() {

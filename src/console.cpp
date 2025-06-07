@@ -58,19 +58,19 @@ namespace console {
         }
         if (cmd == "poweroff") {
             esp_deep_sleep_start();
-            return "Powering off...";
+            return "";
         }
         if (cmd == "reboot") {
             esp_restart();
-            return "Rebooting...";
+            return "";
         }
         if (cmd == "f660") {
             f660::start();
-            return "f660 started.";
+            return "";
         }
         if (cmd == "f660stop") {
             f660::stop();
-            return "f660 stopped.";
+            return "";
         }
         return "Unknown command.";
     }

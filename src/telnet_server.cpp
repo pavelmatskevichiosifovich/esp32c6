@@ -7,7 +7,6 @@
 #include <string>
 #include <cstring>
 #include "utils.h"
-#include <cctype>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -18,27 +17,33 @@ namespace telnet_server {
     const int PORT = 23;
     const int AUTH_TIMEOUT_SEC = 60;
 
+    // Telnet IAC команды
+    #define IAC   255 // Interpret As Command
+    #define DONT  254
+    #define DO    253
+    #define WILL  251
+    #define WONT  252
+    #define ECHO  1   // Эхо
+    #define SGA   3   // Suppress Go Ahead
+    #define LINEMODE 34 // Линейный режим
+
     typedef struct {
         int sock;
         char ip[16];
     } ClientData;
 
-    static std::string cleanString(const std::string& input) {
-        std::string cleaned;
-        for (char c : input) {
-            if (std::isalnum(c) || c == '_') {  // Только буквы, цифры и подчёркивания, без пробелов
-                cleaned += c;
-            }
-        }
-        ESP_LOGI(TAG, "Cleaned string: '%s', length: %zu", cleaned.c_str(), cleaned.length());
-        return cleaned;
+    static void sendIACCommand(int sock, uint8_t command, uint8_t option) {
+        uint8_t iac_cmd[3] = { IAC, command, option };
+        send(sock, iac_cmd, 3, 0);
+        ESP_LOGI(TAG, "Sent IAC %s %d", (command == DO ? "DO" : command == DONT ? "DONT" : command == WILL ? "WILL" : "WONT"), option);
     }
 
     static std::string receiveLine(int sock) {
         char buffer[128];
         std::string line;
         fd_set readfds;
-        struct timeval tv = {AUTH_TIMEOUT_SEC, 0};
+        struct timeval tv = { AUTH_TIMEOUT_SEC, 0 };
+
         while (1) {
             FD_ZERO(&readfds);
             FD_SET(sock, &readfds);
@@ -47,20 +52,35 @@ namespace telnet_server {
                 int len = recv(sock, buffer, sizeof(buffer) - 1, 0);
                 if (len > 0) {
                     buffer[len] = '\0';
-                    for (int i = 0; i < len; i++) {
-                        if (buffer[i] == '\n') {
+                    for (int j = 0; j < len; j++) {
+                        if ((uint8_t)buffer[j] == IAC) {
+                            if (j + 2 < len) {
+                                uint8_t command = (uint8_t)buffer[j + 1];
+                                uint8_t option = (uint8_t)buffer[j + 2];
+                                if (command == DO || command == DONT || command == WILL || command == WONT) {
+                                    if (command == DO) {
+                                        sendIACCommand(sock, WONT, option);
+                                    } else if (command == DONT) {
+                                        sendIACCommand(sock, WONT, option);
+                                    } else if (command == WILL || command == WONT) {
+                                        sendIACCommand(sock, DONT, option);
+                                    }
+                                    j += 2;
+                                    continue;
+                                }
+                            }
+                            ESP_LOGW(TAG, "Invalid IAC sequence at index %d", j);
+                            continue;
+                        } else if (buffer[j] == '\n') {
                             ESP_LOGI(TAG, "Received line (raw): '%s', length: %zu", line.c_str(), line.length());
-                            std::string cleaned = cleanString(line);
-                            return cleaned;
-                        } else if (buffer[i] != '\r') {
-                            line += buffer[i];
+                            return line;
+                        } else if (buffer[j] != '\r') {
+                            line += buffer[j];
                         }
                     }
                 } else if (len == 0) {
                     return "";
                 }
-            } else if (ret == 0) {
-                return "";
             } else {
                 return "";
             }
@@ -75,6 +95,11 @@ namespace telnet_server {
         vPortFree(pvParameters);
         bool authenticated = false;
 
+        // Отправляем начальные IAC-команды для настройки терминала
+        sendIACCommand(client_sock, DONT, ECHO);
+        sendIACCommand(client_sock, WILL, SGA);
+        sendIACCommand(client_sock, DONT, LINEMODE);
+
         send(client_sock, "Login: ", 7, 0);
         std::string username = receiveLine(client_sock);
         send(client_sock, "Password: ", 10, 0);
@@ -82,7 +107,7 @@ namespace telnet_server {
 
         if (username == ROOT_USER && password == ROOT_PASS) {
             authenticated = true;
-            send(client_sock, "Authenticated.\n> ", 16, 0);
+            send(client_sock, "Authenticated.\n>  ", 17, 0); // Добавлен пробел
             ESP_LOGI(TAG, "Authentication successful for IP: %s", client_ip);
         } else {
             send(client_sock, "Authentication failed.\n", 25, 0);
@@ -102,10 +127,10 @@ namespace telnet_server {
                         close(client_sock);
                         break;
                     } else {
-                        send(client_sock, "\n> ", 3, 0);
+                        send(client_sock, "\n> ", 4, 0);
                     }
                 } else {
-                    send(client_sock, "> ", 2, 0);
+                    send(client_sock, "> ", 3, 0);
                 }
             }
         }
