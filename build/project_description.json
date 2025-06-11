@@ -1,7 +1,7 @@
 {
     "version":            "1.2",
     "project_name":       "esp32c6",
-    "project_version":    "f0571ce-dirty",
+    "project_version":    "904b0a9-dirty",
     "project_path":       "/home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6",
     "idf_path":           "/home/pavelmatskevichiosifovich/esp/v5.4.1/esp-idf",
     "build_dir":          "/home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/build",

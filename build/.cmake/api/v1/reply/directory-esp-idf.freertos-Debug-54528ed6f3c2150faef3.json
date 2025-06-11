@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "esp-idf/freertos",
+		"source" : "/home/pavelmatskevichiosifovich/esp/v5.4.1/esp-idf/components/freertos"
+	}
+}

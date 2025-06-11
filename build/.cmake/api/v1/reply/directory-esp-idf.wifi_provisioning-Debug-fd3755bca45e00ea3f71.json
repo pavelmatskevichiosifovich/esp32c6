@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "esp-idf/wifi_provisioning",
+		"source" : "/home/pavelmatskevichiosifovich/esp/v5.4.1/esp-idf/components/wifi_provisioning"
+	}
+}

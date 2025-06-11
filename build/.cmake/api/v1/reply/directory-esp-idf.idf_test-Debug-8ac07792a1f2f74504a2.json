@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "esp-idf/idf_test",
+		"source" : "/home/pavelmatskevichiosifovich/esp/v5.4.1/esp-idf/components/idf_test"
+	}
+}

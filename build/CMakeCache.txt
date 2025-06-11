@@ -357,6 +357,9 @@ PYTHON:UNINITIALIZED=/home/pavelmatskevichiosifovich/.espressif/python_env/idf5.
 //No help, variable specified on the command line.
 PYTHON_DEPS_CHECKED:UNINITIALIZED=1
 
+//No help, variable specified on the command line.
+SDKCONFIG:UNINITIALIZED=/home/pavelmatskevichiosifovich/Документы/PlatformIO/Projects/esp32c6/sdkconfig
+
 //Allow unsafe builds. These builds ARE NOT SECURE.
 UNSAFE_BUILD:BOOL=OFF
 
@@ -437,6 +440,8 @@ CMAKE_COMMAND:INTERNAL=/usr/bin/cmake
 CMAKE_CPACK_COMMAND:INTERNAL=/usr/bin/cpack
 //Path to ctest program executable.
 CMAKE_CTEST_COMMAND:INTERNAL=/usr/bin/ctest
+//ADVANCED property for variable: CMAKE_CXX_COMPILER
+CMAKE_CXX_COMPILER-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_CXX_COMPILER_AR
 CMAKE_CXX_COMPILER_AR-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_CXX_COMPILER_RANLIB
@@ -451,6 +456,8 @@ CMAKE_CXX_FLAGS_MINSIZEREL-ADVANCED:INTERNAL=1
 CMAKE_CXX_FLAGS_RELEASE-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_CXX_FLAGS_RELWITHDEBINFO
 CMAKE_CXX_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_C_COMPILER
+CMAKE_C_COMPILER-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_C_COMPILER_AR
 CMAKE_C_COMPILER_AR-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_C_COMPILER_RANLIB
@@ -608,6 +615,8 @@ _Python3_EXECUTABLE:INTERNAL=/home/pavelmatskevichiosifovich/.espressif/python_e
 //Python3 Properties
 _Python3_INTERPRETER_PROPERTIES:INTERNAL=Python;3;11;2;32;;;/usr/lib/python3.11;/usr/lib/python3.11;/home/pavelmatskevichiosifovich/.espressif/python_env/idf5.4_py3.11_env/lib/python3.11/site-packages;/home/pavelmatskevichiosifovich/.espressif/python_env/idf5.4_py3.11_env/lib/python3.11/site-packages
 _Python3_INTERPRETER_SIGNATURE:INTERNAL=6d7908d55d0916cff47623deb30f1243
+//Interpreter reason failure
+_Python3_Interpreter_REASON_FAILURE:INTERNAL=
 //NumPy reason failure
 _Python3_NumPy_REASON_FAILURE:INTERNAL=
 

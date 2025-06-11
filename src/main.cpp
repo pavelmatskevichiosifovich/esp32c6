@@ -6,6 +6,7 @@
 #include "nvs_flash.h"
 #include "flash.h"
 #include "lo.h"
+#include "wifi_core.h"
 #include "wifi_ap.h"
 #include "wifi_sta.h"
 #include "voltage.h"
@@ -13,6 +14,7 @@
 #include "l298n.h"
 #include "console.h"
 #include "telnet_server.h"
+#include "dns_server.h"
 
 extern "C" void app_main(void) {
     static const char *TAG = "main";
@@ -23,8 +25,10 @@ extern "C" void app_main(void) {
     
     flash::init();
     lo::init();
+    wifi_core::init();
     wifi_ap::init();
     wifi_sta::init();
+    dns_server::init();
     console::init();
     telnet_server::init();
     voltage::init();

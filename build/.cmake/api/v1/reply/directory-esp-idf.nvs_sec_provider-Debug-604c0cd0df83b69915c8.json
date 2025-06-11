@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "esp-idf/nvs_sec_provider",
+		"source" : "/home/pavelmatskevichiosifovich/esp/v5.4.1/esp-idf/components/nvs_sec_provider"
+	}
+}

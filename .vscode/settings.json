@@ -8,5 +8,6 @@
     "idf.customExtraVars": {
         "IDF_TARGET": "esp32c6"
     },
-    "idf.port": "/dev/esp32c6"
+    "idf.port": "/dev/esp32c6",
+    "git.ignoreLimitWarning": true
 }
