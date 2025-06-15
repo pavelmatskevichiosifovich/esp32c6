@@ -17,6 +17,10 @@ namespace l298n {
     #define FIXED_DUTY 6191
     static const char* TAG = "l298n";
 
+    // Добавляем флаг для контроля работы задачи
+    static volatile bool cycleTaskRunning = false;
+    static TaskHandle_t cycleTaskHandle = NULL;
+
     void init() {
         gpio_set_direction(static_cast<gpio_num_t>(IN1_GPIO), GPIO_MODE_OUTPUT);
         gpio_set_direction(static_cast<gpio_num_t>(IN2_GPIO), GPIO_MODE_OUTPUT);
@@ -66,16 +70,55 @@ namespace l298n {
     }
 
     static void runCycleTask(void *pvParameters) {
-        while (1) {
-           forward();
-           vTaskDelay(2000 / portTICK_PERIOD_MS);
-       //    backward();
-           vTaskDelay(300 / portTICK_PERIOD_MS);
+        cycleTaskRunning = true;
+        while (cycleTaskRunning) {
+            forward();
+            vTaskDelay(2000 / portTICK_PERIOD_MS);
+            // backward();
+            vTaskDelay(300 / portTICK_PERIOD_MS);
+            
+            // Проверяем флаг на каждой итерации
+            if (!cycleTaskRunning) break;
         }
+        
+        // Останавливаем мотор при завершении задачи
+        stop();
+        
+        // Удаляем задачу
+        cycleTaskHandle = NULL;
+        vTaskDelete(NULL);
     }
 
     void startCycleTask() {
-        xTaskCreate(runCycleTask, "l298n_cycle_task", 2048, NULL, 5, NULL);
-        ESP_LOGI(TAG, "L298N cycle task started");
+        if (cycleTaskHandle == NULL) {
+            xTaskCreate(runCycleTask, "l298n_cycle_task", 2048, NULL, 5, &cycleTaskHandle);
+            ESP_LOGI(TAG, "L298N cycle task started");
+        } else {
+            ESP_LOGW(TAG, "Cycle task is already running");
+        }
+    }
+
+    void stopCycleTask() {
+        if (cycleTaskHandle != NULL) {
+            cycleTaskRunning = false;
+            
+            // Даем задаче время завершиться корректно
+            int timeout = 10000;
+            while (cycleTaskHandle != NULL && timeout-- > 0) {
+                vTaskDelay(10 / portTICK_PERIOD_MS);
+            }
+            
+            // Если задача не завершилась, принудительно удаляем
+            if (cycleTaskHandle != NULL) {
+                vTaskDelete(cycleTaskHandle);
+                cycleTaskHandle = NULL;
+                ESP_LOGW(TAG, "Cycle task force stopped");
+            }
+            
+            stop(); // Дополнительная страховка - останавливаем мотор
+            ESP_LOGI(TAG, "L298N cycle task stopped");
+        } else {
+            ESP_LOGW(TAG, "No active cycle task to stop");
+        }
     }
 }

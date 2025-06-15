@@ -19,7 +19,7 @@ namespace telnet_server {
     const int PORT = 23;
     static int active_clients = 0;
     #define MAX_CLIENTS 4
-    #define INACTIVITY_TIMEOUT_MS 60000 // 60 секунд
+    #define INACTIVITY_TIMEOUT_MS 300000
 
     #define IAC   255
     #define DONT  254
@@ -27,6 +27,9 @@ namespace telnet_server {
     #define WILL  251
     #define WONT  252
     #define SGA   3
+
+    static bool stopFlag = false; // Флаг для остановки сервера
+    static int server_sock = -1; // Сокет сервера для закрытия
 
     typedef struct {
         int sock;
@@ -44,6 +47,15 @@ namespace telnet_server {
         return true;
     }
 
+    static void cleanupClient(int sock, const char* client_ip) {
+        ESP_LOGD(TAG, "Client %s: Closing socket", client_ip);
+        close(sock);
+        ESP_LOGI(TAG, "Client %s: Disconnected", client_ip);
+        active_clients--;
+        esp_task_wdt_delete(NULL);
+        vTaskDelete(NULL);
+    }
+
     static std::string receiveLine(int sock, const char* client_ip) {
         char buffer[128];
         std::string line;
@@ -56,6 +68,12 @@ namespace telnet_server {
         }
 
         while (true) {
+            uint32_t now = xTaskGetTickCount() * portTICK_PERIOD_MS;
+            if (now - last_activity >= INACTIVITY_TIMEOUT_MS) {
+                ESP_LOGI(TAG, "Client %s: Inactivity timeout in receiveLine", client_ip);
+                return "";
+            }
+
             fd_set readfds;
             FD_ZERO(&readfds);
             FD_SET(sock, &readfds);
@@ -65,13 +83,8 @@ namespace telnet_server {
             if (ret > 0) {
                 int bytes = recv(sock, buffer, sizeof(buffer) - 1, 0);
                 if (bytes > 0) {
-                    last_activity = xTaskGetTickCount() * portTICK_PERIOD_MS; // Сброс таймера
+                    last_activity = now; // Сброс таймера
                     buffer[bytes] = '\0';
-                    std::string hex;
-                    for (int i = 0; i < bytes; i++) {
-                        char hex_buf[4];
-                        snprintf(hex_buf, sizeof(hex_buf), "%02x ", (unsigned char)buffer[i]);
-                    }
                     ESP_LOGD(TAG, "Client %s: Received %d bytes", client_ip, bytes);
                     for (size_t j = 0; j < bytes; j++) {
                         if ((uint8_t)buffer[j] == IAC) {
@@ -92,7 +105,7 @@ namespace telnet_server {
                             continue;
                         } else if (buffer[j] == '\n') {
                             ESP_LOGD(TAG, "Client %s: Line received: %s", client_ip, line.c_str());
-                            return utils::trim(line);
+                            return utils::trim(line); // Возвращаем обработанную строку
                         } else if (buffer[j] != '\r') {
                             line += buffer[j];
                         }
@@ -106,13 +119,6 @@ namespace telnet_server {
                 }
             } else if (ret < 0) {
                 ESP_LOGE(TAG, "Client %s: Select error: %d", client_ip, errno);
-                return "";
-            }
-
-            // Проверка таймаута неактивности
-            uint32_t now = xTaskGetTickCount() * portTICK_PERIOD_MS;
-            if (now - last_activity >= INACTIVITY_TIMEOUT_MS) {
-                ESP_LOGI(TAG, "Client %s: Inactivity timeout, disconnecting", client_ip);
                 return "";
             }
 
@@ -137,29 +143,20 @@ namespace telnet_server {
         int flags = fcntl(sock, F_GETFL, 0);
         if (flags < 0) {
             ESP_LOGE(TAG, "Client %s: Invalid socket: %d", client_ip, errno);
-            close(sock);
-            active_clients--;
-            esp_task_wdt_delete(NULL);
-            vTaskDelete(NULL);
+            cleanupClient(sock, client_ip);
             return;
         }
 
         if (!sendIACCommand(sock, WILL, SGA, client_ip)) {
             ESP_LOGE(TAG, "Client %s: Failed to send initial IAC command", client_ip);
-            close(sock);
-            active_clients--;
-            esp_task_wdt_delete(NULL);
-            vTaskDelete(NULL);
+            cleanupClient(sock, client_ip);
             return;
         }
 
         ESP_LOGD(TAG, "Client %s: Sending login prompt", client_ip);
         if (send(sock, "Login: ", 7, 0) < 0) {
             ESP_LOGE(TAG, "Client %s: Failed to send login prompt: %d", client_ip, errno);
-            close(sock);
-            active_clients--;
-            esp_task_wdt_delete(NULL);
-            vTaskDelete(NULL);
+            cleanupClient(sock, client_ip);
             return;
         }
 
@@ -167,21 +164,15 @@ namespace telnet_server {
         std::string username = receiveLine(sock, client_ip);
         ESP_LOGD(TAG, "Client %s: Received username: '%s' (len=%d)", client_ip, username.c_str(), username.length());
         if (username.empty()) {
-            ESP_LOGE(TAG, "Client %s: Disconnected (no username): %d", client_ip, errno);
-            close(sock);
-            active_clients--;
-            esp_task_wdt_delete(NULL);
-            vTaskDelete(NULL);
+            ESP_LOGE(TAG, "Client %s: Disconnected (no username or timeout): %d", client_ip, errno);
+            cleanupClient(sock, client_ip);
             return;
         }
 
         ESP_LOGD(TAG, "Client %s: Sending password prompt", client_ip);
         if (send(sock, "Password: ", 10, 0) < 0) {
             ESP_LOGE(TAG, "Client %s: Failed to send password prompt: %d", client_ip, errno);
-            close(sock);
-            active_clients--;
-            esp_task_wdt_delete(NULL);
-            vTaskDelete(NULL);
+            cleanupClient(sock, client_ip);
             return;
         }
 
@@ -189,11 +180,8 @@ namespace telnet_server {
         std::string password = receiveLine(sock, client_ip);
         ESP_LOGD(TAG, "Client %s: Received password: '%s' (len=%d)", client_ip, password.c_str(), password.length());
         if (password.empty()) {
-            ESP_LOGE(TAG, "Client %s: Disconnected (no password): %d", client_ip, errno);
-            close(sock);
-            active_clients--;
-            esp_task_wdt_delete(NULL);
-            vTaskDelete(NULL);
+            ESP_LOGE(TAG, "Client %s: Disconnected (no password or timeout): %d", client_ip, errno);
+            cleanupClient(sock, client_ip);
             return;
         }
 
@@ -204,10 +192,7 @@ namespace telnet_server {
             ESP_LOGD(TAG, "Client %s: Sending authenticated message", client_ip);
             if (send(sock, "Authenticated.\r\n> ", 17, 0) < 0) {
                 ESP_LOGE(TAG, "Client %s: Failed to send authenticated message: %d", client_ip, errno);
-                close(sock);
-                active_clients--;
-                esp_task_wdt_delete(NULL);
-                vTaskDelete(NULL);
+                cleanupClient(sock, client_ip);
                 return;
             }
             ESP_LOGI(TAG, "Client %s: Authentication successful", client_ip);
@@ -217,10 +202,7 @@ namespace telnet_server {
                 ESP_LOGE(TAG, "Client %s: Failed to send auth failed message: %d", client_ip, errno);
             }
             ESP_LOGI(TAG, "Client %s: Disconnected (auth failed, username: '%s')", client_ip, username.c_str());
-            close(sock);
-            active_clients--;
-            esp_task_wdt_delete(NULL);
-            vTaskDelete(NULL);
+            cleanupClient(sock, client_ip);
             return;
         }
 
@@ -242,65 +224,79 @@ namespace telnet_server {
                 }
                 return true;
             };
+            uint32_t last_activity = xTaskGetTickCount() * portTICK_PERIOD_MS; // Таймер неактивности
             while (true) {
                 ESP_LOGD(TAG, "Client %s: Waiting for command", client_ip);
                 std::string commandStr = receiveLine(sock, client_ip);
+                uint32_t now = xTaskGetTickCount() * portTICK_PERIOD_MS;
                 ESP_LOGD(TAG, "Client %s: Received command: '%s'", client_ip, commandStr.c_str());
                 if (commandStr.empty()) {
-                    if (errno != 0) {
-                        break; // Ошибка уже залогирована в receiveLine
+                    // Проверяем, не вызван ли empty() из-за таймаута или ошибки
+                    if (now - last_activity >= INACTIVITY_TIMEOUT_MS) {
+                        ESP_LOGI(TAG, "Client %s: Disconnected due to inactivity timeout", client_ip);
+                        cleanupClient(sock, client_ip);
+                        return;
                     }
-                    ESP_LOGD(TAG, "Client %s: Empty command, sending new prompt", client_ip);
+                    // Проверяем состояние сокета перед отправкой prompt
+                    int error = 0;
+                    socklen_t len = sizeof(error);
+                    if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &error, &len) < 0 || error != 0) {
+                        ESP_LOGE(TAG, "Client %s: Socket error detected, errno=%d", client_ip, error);
+                        cleanupClient(sock, client_ip);
+                        return;
+                    }
+                    ESP_LOGD(TAG, "Client %s: Empty command received, sending prompt", client_ip);
                     int sent = send(sock, "> ", 2, 0);
                     if (sent < 0) {
                         ESP_LOGE(TAG, "Client %s: Failed to send prompt: %d", client_ip, errno);
-                        break;
+                        cleanupClient(sock, client_ip);
+                        return;
                     }
                     ESP_LOGD(TAG, "Client %s: Sent %d bytes of prompt", client_ip, sent);
+                    last_activity = now; // Сбрасываем таймер при пустой команде
                     esp_task_wdt_reset();
                     continue;
                 }
                 std::string cmd = utils::trim(commandStr);
                 ESP_LOGD(TAG, "Client %s: Trimmed command: '%s'", client_ip, cmd.c_str());
+                last_activity = now; // Сбрасываем таймер при получении команды
                 if (cmd == "exit") {
                     sendResponse("Exiting...");
                     ESP_LOGI(TAG, "Client %s: Exiting by command", client_ip);
-                    break;
+                    cleanupClient(sock, client_ip);
+                    return;
+                } else {
+                    ESP_LOGD(TAG, "Client %s: Processing command", client_ip);
+                    console::processCommand(commandStr.c_str(), sendResponse);
+                    ESP_LOGD(TAG, "Client %s: Command processed, sending prompt", client_ip);
                 }
-                ESP_LOGD(TAG, "Client %s: Processing command", client_ip);
-                console::processCommand(commandStr.c_str(), sendResponse);
-                ESP_LOGD(TAG, "Client %s: Command processed, sending prompt", client_ip);
                 int sent = send(sock, "> ", 2, 0);
                 if (sent < 0) {
                     ESP_LOGE(TAG, "Client %s: Failed to send prompt: %d", client_ip, errno);
-                    break;
+                    cleanupClient(sock, client_ip);
+                    return;
                 }
                 ESP_LOGD(TAG, "Client %s: Sent %d bytes of prompt", client_ip, sent);
                 esp_task_wdt_reset();
             }
         }
-        ESP_LOGD(TAG, "Client %s: Closing socket", client_ip);
-        close(sock);
-        ESP_LOGI(TAG, "Client %s: Disconnected", client_ip);
-        active_clients--;
-        esp_task_wdt_delete(NULL);
-        vTaskDelete(NULL);
     }
 
     static void telnetServerTask(void* pvParameters) {
         int port = PORT;
-        while (true) {
-            int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
-            if (sock < 0) {
+        while (!stopFlag) {
+            server_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
+            if (server_sock < 0) {
                 ESP_LOGE(TAG, "Socket creation failed: %d, retrying...", errno);
                 vTaskDelay(5000 / portTICK_PERIOD_MS);
                 continue;
             }
 
             int opt = 1;
-            if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+            if (setsockopt(server_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
                 ESP_LOGE(TAG, "Failed to set SO_REUSEADDR: %d", errno);
-                close(sock);
+                close(server_sock);
+                server_sock = -1;
                 vTaskDelay(5000 / portTICK_PERIOD_MS);
                 continue;
             }
@@ -310,23 +306,25 @@ namespace telnet_server {
             server_addr.sin_family = AF_INET;
             server_addr.sin_addr.s_addr = INADDR_ANY;
             server_addr.sin_port = htons(port);
-            if (bind(sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) != 0) {
+            if (bind(server_sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) != 0) {
                 ESP_LOGE(TAG, "Bind failed: %d, retrying...", errno);
-                close(sock);
+                close(server_sock);
+                server_sock = -1;
                 vTaskDelay(5000 / portTICK_PERIOD_MS);
                 continue;
             }
-            if (listen(sock, 5) != 0) {
+            if (listen(server_sock, 5) != 0) {
                 ESP_LOGE(TAG, "Listen failed: %d, retrying...", errno);
-                close(sock);
+                close(server_sock);
+                server_sock = -1;
                 vTaskDelay(5000 / portTICK_PERIOD_MS);
                 continue;
             }
             ESP_LOGI(TAG, "Telnet server initialized on port %d", port);
-            while (true) {
+            while (!stopFlag) {
                 struct sockaddr_in client_addr;
                 socklen_t client_len = sizeof(client_addr);
-                int client_sock = accept(sock, (struct sockaddr*)&client_addr, &client_len);
+                int client_sock = accept(server_sock, (struct sockaddr*)&client_addr, &client_len);
                 if (client_sock >= 0) {
                     char client_ip[16];
                     inet_ntoa_r(client_addr.sin_addr, client_ip, sizeof(client_ip));
@@ -337,29 +335,49 @@ namespace telnet_server {
                         continue;
                     }
                     ESP_LOGI(TAG, "Client %s: Connected", client_ip);
-                    ClientData* clientData = (ClientData*)pvPortMalloc(sizeof(ClientData));
-                    if (!clientData) {
+                    ClientData* client_data = (ClientData*)pvPortMalloc(sizeof(ClientData));
+                    if (!client_data) {
                         ESP_LOGE(TAG, "Client %s: Failed to allocate client data", client_ip);
                         send(client_sock, "Server error.\r\n", 15, 0);
                         close(client_sock);
                         continue;
                     }
-                    clientData->sock = client_sock;
-                    strcpy(clientData->ip, client_ip);
-                    xTaskCreate(handleClient, "handle_client_t", 12288, clientData, 5, NULL);
+                    client_data->sock = client_sock;
+                    strcpy(client_data->ip, client_ip);
+                    xTaskCreate(handleClient, "handle_client_t", 12288, client_data, 5, NULL);
                 } else {
-                    ESP_LOGE(TAG, "Accept failed: %d, restarting server...", errno);
-                    close(sock);
+                    ESP_LOGE(TAG, "Accept failed: %d, checking stop flag...", errno);
+                    if (stopFlag) {
+                        break;
+                    }
+                    close(server_sock);
+                    server_sock = -1;
                     vTaskDelay(5000 / portTICK_PERIOD_MS);
                     break;
                 }
             }
+            if (server_sock >= 0) {
+                close(server_sock);
+                server_sock = -1;
+            }
         }
+        ESP_LOGI(TAG, "Telnet server task terminated");
         vTaskDelete(NULL);
     }
 
     void init() {
         ESP_LOGI(TAG, "Initializing Telnet server...");
+        stopFlag = false; // Сбрасываем флаг при инициализации
         xTaskCreate(telnetServerTask, "telnet_server_task", 6144, NULL, 5, NULL);
+    }
+
+    void stop() {
+        ESP_LOGI(TAG, "Stopping Telnet server...");
+        stopFlag = true;
+        if (server_sock >= 0) {
+            shutdown(server_sock, SHUT_RDWR);
+            close(server_sock);
+            server_sock = -1;
+        }
     }
 }

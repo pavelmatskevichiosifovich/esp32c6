@@ -11,6 +11,10 @@
 #include <functional>
 #include "f660.h"
 #include "voltage.h"
+#include "l298n.h"
+#include "dns_server.h"
+#include "telnet_server.h"
+#include "http_api_server.h"
 
 namespace console {
     const uart_port_t UART_PORT = UART_NUM_0;
@@ -109,12 +113,8 @@ namespace console {
 
     void processCommand(const char* command, std::function<void(const char*)> sendResponse) {
         std::string cmd = utils::trim(command);
-        if (cmd.empty()) {
-            sendResponse("Unknown command.");
-            return;
-        }
         if (cmd == "help") {
-            sendResponse("Available commands: help, exit, poweroff, reboot, f660, f660_stop, voltage_3v3, voltage_r1_r2");
+            sendResponse("Available commands: help, exit, poweroff, reboot, f660, f660_stop, voltage_3v3, voltage_r1_r2, l298, l298_stop, dns_server_init, dns_server_stop, telnet_server_init, telnet_server_stop, http_api_server_init, http_api_server_stop");
             return;
         }
         if (cmd == "poweroff") {
@@ -149,6 +149,46 @@ namespace console {
             char response[32];
             snprintf(response, sizeof(response), "Voltage: %.2f V", voltage);
             sendResponse(response);
+            return;
+        }
+        if (cmd == "l298") {
+            sendResponse("l298 started.");
+            l298n::startCycleTask();
+            return;
+        }
+        if (cmd == "l298_stop") {
+            l298n::stopCycleTask();
+            sendResponse("l298 stopped.");
+            return;
+        }
+        if (cmd == "dns_server_init") {
+            dns_server::init();
+            sendResponse("DNS server started.");
+            return;
+        }
+        if (cmd == "dns_server_stop") {
+            dns_server::stop();
+            sendResponse("DNS server stopped.");
+            return;
+        }
+        if (cmd == "telnet_server_init") {
+            telnet_server::init();
+            sendResponse("Telnet server started.");
+            return;
+        }
+        if (cmd == "telnet_server_stop") {
+            telnet_server::stop();
+            sendResponse("Telnet server stopped.");
+            return;
+        }
+        if (cmd == "http_api_server_init") {
+            http_api_server::init();
+            sendResponse("HTTP API server started.");
+            return;
+        }
+        if (cmd == "http_api_server_stop") {
+            http_api_server::stop();
+            sendResponse("HTTP API server stopped.");
             return;
         }
         sendResponse("Unknown command.");

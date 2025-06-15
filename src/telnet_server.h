@@ -3,6 +3,7 @@
 
 namespace telnet_server {
     void init();
+    void stop();
 }
 
 #endif

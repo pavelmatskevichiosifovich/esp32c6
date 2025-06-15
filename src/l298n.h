@@ -7,6 +7,7 @@ namespace l298n {
     void backward();
     void stop();
     void startCycleTask();
+    void stopCycleTask();
 }
 
 #endif
